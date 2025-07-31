@@ -1,5 +1,28 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from django.db import models
+
+# PUBLIC_INTERFACE
+class Note(models.Model):
+    """
+    Model for a personal note.
+
+    Fields:
+        title (str): The title of the note (max 200 chars).
+        content (str): The content/body of the note.
+        owner (User): ForeignKey to User - only owner can access/modify.
+        created_at (datetime): When the note was created.
+        updated_at (datetime): When the note was last modified.
+    """
+
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
 
 # PUBLIC_INTERFACE
 class UserSerializer(serializers.ModelSerializer):

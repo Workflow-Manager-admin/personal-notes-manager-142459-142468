@@ -1,9 +1,12 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status, permissions, viewsets
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import UserSerializer, RegisterSerializer
+from .models import UserSerializer, RegisterSerializer, Note
+from .serializers import NoteSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import filters
 
 # PUBLIC_INTERFACE
 @api_view(['GET'])
@@ -69,15 +72,27 @@ def logout(request):
     except Exception:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-# Example of a protected endpoint
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def notes_list(request):
+# PUBLIC_INTERFACE
+class NoteViewSet(viewsets.ModelViewSet):
     """
-    List all notes for the logged-in user (placeholder).
+    API endpoint for managing Notes.
 
-    This should be replaced by real notes logic.
+    Only authenticated users can perform CRUD on their own notes.
     """
-    # Example only; replace with actual notes logic.
-    # You'd typically query Note.objects.filter(user=request.user)
-    return Response({"notes": []})
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering = ['-updated_at']
+    search_fields = ['title', 'content']
+
+    def get_queryset(self):
+        """
+        Limit notes to those owned by the request user.
+        """
+        return Note.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        """
+        Set note owner as the requesting user.
+        """
+        serializer.save(owner=self.request.user)
