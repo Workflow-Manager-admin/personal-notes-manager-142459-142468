@@ -78,6 +78,15 @@ class NoteViewSet(viewsets.ModelViewSet):
     API endpoint for managing Notes.
 
     Only authenticated users can perform CRUD on their own notes.
+
+    Supports searching and filtering notes by "title" and "content" via the `search` query parameter.
+    Example: /api/notes/?search=my_text will return notes whose title or content contains "my_text" (case-insensitive substring).
+
+    Query Parameters:
+    - search: string. Case-insensitive search for any substring in title or content.
+    - ordering: string (e.g., 'created_at', '-updated_at'). Orders the result.
+
+    Note: Only authenticated users will get results for their own notes.
     """
     serializer_class = NoteSerializer
     permission_classes = [IsAuthenticated]
