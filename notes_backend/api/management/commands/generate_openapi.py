@@ -8,10 +8,16 @@ from drf_yasg.views import get_schema_view
 from rest_framework.permissions import AllowAny
 
 class Command(BaseCommand):
+    help = "Generate the OpenAPI schema for all documented endpoints and models."
+
     def handle(self, *args, **options):
+        """
+        Generate and write the OpenAPI schema from all DRF-YASG-documented endpoints.
+        """
         factory = RequestFactory()
         django_request = factory.get('/api/?format=openapi')
 
+        # Build schema view with consistent API meta
         schema_view = get_schema_view(
             openapi.Info(
                 title="My API",
@@ -22,13 +28,15 @@ class Command(BaseCommand):
             permission_classes=(AllowAny,),
         )
 
-        # Call the view with the raw Django HttpRequest
+        # Render OpenAPI schema as JSON
         response = schema_view.without_ui(cache_timeout=0)(django_request)
         response.render()
 
         openapi_schema = json.loads(response.content.decode())
 
-        output_dir = "interfaces"
+        output_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "interfaces"
+        )
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, "openapi.json")
 
